@@ -765,6 +765,10 @@
 
             <button class="btn btn-success" style="width: 100%; margin-top: 16px; margin-bottom: 8px;" onclick="exportToExcel()">Export CSV (opens in Excel)</button>
 
+            <button class="btn btn-primary" style="width: 100%; margin-bottom: 8px;" onclick="document.getElementById('importFileInput').click()">Import CSV / Excel</button>
+            <input type="file" id="importFileInput" accept=".csv,.xlsx,.xls" style="display:none;" onchange="importData(event)">
+            <div id="importStatus" style="font-size:11px;color:#666;text-align:center;min-height:16px;margin-bottom:8px;"></div>
+
             <button class="btn btn-danger" style="width: 100%;" onclick="clearAllData()">Clear All Data</button>
         </div>
     </div>
@@ -1274,11 +1278,7 @@
             }
 
             const rows = [];
-
-            // Header
             rows.push(['Date', ...state.settings.columnNames].map(escCSV).join(','));
-
-            // Workout rows — sorted oldest → newest
             const sorted = [...state.workouts].sort((a, b) => new Date(a.date) - new Date(b.date));
             sorted.forEach(w => {
                 const row = [formatDate(w.date), ...state.settings.columnNames.map(col => w.values[col] || '')];
@@ -1289,21 +1289,159 @@
             const now = new Date();
             const filename = `training_log_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.csv`;
 
-            // Blob download — works on desktop; on iOS opens in Files / Numbers
             try {
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                 const url  = URL.createObjectURL(blob);
                 const a    = document.createElement('a');
-                a.href     = url;
-                a.download = filename;
-                a.style.display = 'none';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                a.href = url; a.download = filename; a.style.display = 'none';
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 setTimeout(() => URL.revokeObjectURL(url), 500);
             } catch (e) {
-                // Ultimate fallback: open as data URI
                 window.open('data:text/csv;charset=utf-8,' + encodeURIComponent(csv));
+            }
+        }
+
+        // ── Import ────────────────────────────────────────────────────────
+
+        // Parse ddMMMyy → YYYY-MM-DD. Also accepts YYYY-MM-DD passthrough.
+        function parseDateImport(str) {
+            if (!str) return null;
+            str = str.trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;  // already ISO
+            const months = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+            const m = str.match(/^(\d{1,2})([A-Za-z]{3})(\d{2,4})$/);
+            if (m) {
+                const day = String(parseInt(m[1])).padStart(2, '0');
+                const mon = months[m[2].toLowerCase()];
+                if (mon === undefined) return null;
+                const yr  = m[3].length === 2 ? 2000 + parseInt(m[3]) : parseInt(m[3]);
+                return `${yr}-${String(mon + 1).padStart(2, '0')}-${day}`;
+            }
+            // Try native Date parse as last resort
+            const d = new Date(str);
+            if (!isNaN(d)) return d.toISOString().split('T')[0];
+            return null;
+        }
+
+        // Minimal CSV parser — handles quoted fields, CRLF and LF
+        function parseCSVText(text) {
+            const rows = [];
+            const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                const cols = [];
+                let field = '', inQ = false;
+                for (let i = 0; i < line.length; i++) {
+                    const c = line[i];
+                    if (c === '"') {
+                        if (inQ && line[i + 1] === '"') { field += '"'; i++; }
+                        else inQ = !inQ;
+                    } else if (c === ',' && !inQ) {
+                        cols.push(field); field = '';
+                    } else {
+                        field += c;
+                    }
+                }
+                cols.push(field);
+                rows.push(cols);
+            }
+            return rows;
+        }
+
+        // Convert parsed rows → workout objects
+        function rowsToWorkouts(rows) {
+            if (rows.length < 2) return [];
+            const headers = rows[0].map(h => h.trim());
+            const dateIdx = headers.findIndex(h => h.toLowerCase() === 'date');
+            if (dateIdx === -1) throw new Error('No "Date" column found in file.');
+            const colHeaders = headers.filter((_, i) => i !== dateIdx);
+
+            const workouts = [];
+            for (let r = 1; r < rows.length; r++) {
+                const row = rows[r];
+                if (row.every(c => !c.trim())) continue;
+                const dateStr = parseDateImport(row[dateIdx]);
+                if (!dateStr) continue;
+                const values = {};
+                colHeaders.forEach((col, ci) => {
+                    // find the actual column index in the original row
+                    const origIdx = headers.indexOf(col);
+                    values[col] = row[origIdx] ? row[origIdx].trim() : '';
+                });
+                workouts.push({ id: Date.now() + r, date: dateStr, values });
+            }
+            return workouts;
+        }
+
+        // Dynamically load XLSX only when needed (for .xlsx/.xls files)
+        function loadXLSXLib() {
+            return new Promise((resolve, reject) => {
+                if (window.XLSX) return resolve(window.XLSX);
+                const s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js';
+                s.onload  = () => resolve(window.XLSX);
+                s.onerror = () => reject(new Error('Could not load Excel library. Check your internet connection.'));
+                document.head.appendChild(s);
+            });
+        }
+
+        async function importData(event) {
+            const file = event.target.files[0];
+            event.target.value = '';  // reset so same file can be re-selected
+            if (!file) return;
+
+            const status = document.getElementById('importStatus');
+            status.style.color = '#666';
+            status.textContent = 'Reading file…';
+
+            try {
+                let rows;
+                const ext = file.name.split('.').pop().toLowerCase();
+
+                if (ext === 'csv') {
+                    const text = await file.text();
+                    rows = parseCSVText(text);
+                } else if (ext === 'xlsx' || ext === 'xls') {
+                    status.textContent = 'Loading Excel parser…';
+                    const XLSX = await loadXLSXLib();
+                    const buf  = await file.arrayBuffer();
+                    const wb   = XLSX.read(buf, { type: 'array' });
+                    const ws   = wb.Sheets[wb.SheetNames[0]];
+                    rows = XLSX.utils.sheet_to_csv(ws).split('\n').map(r => parseCSVText(r)[0] || []);
+                } else {
+                    throw new Error('Unsupported file type. Use .csv or .xlsx.');
+                }
+
+                const imported = rowsToWorkouts(rows);
+                if (!imported.length) throw new Error('No valid workout rows found in file.');
+
+                // Ask replace or merge
+                const replace = confirm(
+                    `Found ${imported.length} workout(s) in the file.\n\n` +
+                    `OK → Replace all existing data\n` +
+                    `Cancel → Merge (add to existing workouts)`
+                );
+
+                if (replace) {
+                    state.workouts = imported;
+                } else {
+                    // Merge: add imported rows, skip exact date+value duplicates
+                    const existingDates = new Set(state.workouts.map(w => w.date));
+                    const toAdd = imported.filter(w => !existingDates.has(w.date));
+                    state.workouts = [...state.workouts, ...toAdd];
+                }
+
+                // Ensure newest-first order in table
+                state.workouts.sort((a, b) => new Date(b.date) - new Date(a.date));
+                saveState();
+                renderWorkoutLog();
+                renderChart();
+
+                status.style.color = '#2d6a4f';
+                status.textContent = `✓ Imported ${imported.length} workout(s) successfully.`;
+            } catch (err) {
+                status.style.color = '#ef4444';
+                status.textContent = `✗ ${err.message}`;
             }
         }
 
