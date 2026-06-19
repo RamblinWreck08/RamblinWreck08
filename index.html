@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Training Log">
+    <meta name="theme-color" content="#000000">
+    <title>Training Log</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #000;
+            min-height: 100vh;
+            color: #333;
+            padding: 8px;
+            padding-top: max(8px, env(safe-area-inset-top));
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            color: white;
+        }
+
+        .settings-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            padding: 0;
+        }
+
+        .settings-btn:hover {
+            transform: rotate(15deg) scale(1.05);
+        }
+
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .timer-section {
+            flex-shrink: 0;
+        }
+
+        .timer-display {
+            font-size: 40px;
+            font-weight: bold;
+            text-align: center;
+            margin: 8px 0;
+            font-family: 'Courier New', monospace;
+            color: #1b4332;
+        }
+
+        .timer-inputs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+            justify-content: center;
+        }
+
+        .timer-input {
+            width: 60px;
+            padding: 6px;
+            font-size: 14px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .timer-input:focus {
+            outline: none;
+            border-color: #1b4332;
+        }
+
+        .timer-label {
+            font-size: 11px;
+            color: #666;
+            text-align: center;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #1b4332;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2d6a4f;
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .barbell-section {
+            flex-shrink: 0;
+        }
+
+        .barbell-inner {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .barbell-left-col {
+            flex: 0 0 45%;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .barbell-right-col {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-x: auto;
+            min-height: 90px;
+        }
+
+        .barbell-section h2 {
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: #333;
+        }
+
+        .weight-input-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .weight-input-row input {
+            flex: 1;
+            min-width: 0;
+            padding: 6px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .weight-input-row input:focus {
+            outline: none;
+            border-color: #1e3a8a;
+        }
+
+        .weight-unit-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        .barbell-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 4px 0;
+        }
+
+        .bar-main {
+            height: 10px;
+            width: 40px;
+            background: linear-gradient(to bottom, #e5e7eb 0%, #b0b8c1 30%, #6b7280 60%, #9ca3af 100%);
+            border-radius: 3px 0 0 3px;
+            flex-shrink: 0;
+        }
+
+        .collar {
+            width: 8px;
+            height: 22px;
+            background: linear-gradient(to bottom, #f3f4f6 0%, #d1d5db 40%, #9ca3af 100%);
+            border: 1px solid #9ca3af;
+            border-radius: 2px;
+            flex-shrink: 0;
+            box-shadow: 1px 0 2px rgba(0,0,0,0.2);
+        }
+
+        .plates-row {
+            display: flex;
+            align-items: center;
+            gap: 1px;
+        }
+
+        .plate {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border-radius: 3px;
+            position: relative;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.3), inset 1px 0 0 rgba(255,255,255,0.2);
+        }
+
+        .plate span {
+            writing-mode: vertical-lr;
+            transform: rotate(180deg);
+            font-size: 8px;
+            font-weight: 800;
+            color: rgba(255,255,255,0.9);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+            letter-spacing: 0.5px;
+            user-select: none;
+        }
+
+        .plate-45   { width: 18px; height: 90px; background: linear-gradient(to right, #991b1b, #ef4444, #991b1b); border: 1px solid #7f1d1d; }
+        .plate-25   { width: 16px; height: 74px; background: linear-gradient(to right, #854d0e, #eab308, #854d0e); border: 1px solid #713f12; }
+        .plate-25 span { color: rgba(0,0,0,0.75); text-shadow: none; }
+        .plate-10   { width: 14px; height: 60px; background: linear-gradient(to right, #1e3a8a, #3b82f6, #1e3a8a); border: 1px solid #1e3a8a; }
+        .plate-5    { width: 12px; height: 50px; background: linear-gradient(to right, #831843, #ec4899, #831843); border: 1px solid #831843; }
+        .plate-2_5  { width: 10px; height: 40px; background: linear-gradient(to right, #4c1d95, #8b5cf6, #4c1d95); border: 1px solid #4c1d95; }
+        .plate-1_25 { width: 9px;  height: 34px; background: linear-gradient(to right, #164e63, #06b6d4, #164e63); border: 1px solid #164e63; }
+        .plate-1    { width: 8px;  height: 28px; background: linear-gradient(to right, #1f2937, #6b7280, #1f2937); border: 1px solid #111827; }
+        .plate-0_75 { width: 7px;  height: 24px; background: linear-gradient(to right, #065f46, #10b981, #065f46); border: 1px solid #065f46; }
+        .plate-0_5  { width: 6px;  height: 20px; background: linear-gradient(to right, #7c2d12, #fb923c, #7c2d12); border: 1px solid #7c2d12; }
+
+        .plate-info {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e3a8a;
+        }
+
+        .workout-section {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .workout-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .workout-header h2 {
+            font-size: 14px;
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .workout-log {
+            height: 198px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .workout-row {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            min-height: 32px;
+            align-items: center;
+        }
+
+        .workout-row:last-child {
+            border-bottom: none;
+        }
+
+        .workout-cell {
+            flex: 1;
+            padding: 4px 3px;
+            text-align: center;
+            font-size: 11px;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .workout-cell:last-child {
+            border-right: none;
+        }
+
+        .workout-cell-date {
+            font-weight: 600;
+            color: #1b4332;
+        }
+
+        .workout-cell-value {
+            color: #666;
+        }
+
+        .workout-row-input .workout-cell input {
+            width: 100%;
+            padding: 3px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .workout-row-input .workout-cell input:focus {
+            outline: none;
+            border-color: #1b4332;
+        }
+
+        .add-row-btn {
+            width: 100%;
+            padding: 8px;
+            margin-top: 4px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-row-btn:hover {
+            background: #059669;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            border-radius: 12px 12px 0 0;
+            padding: 16px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .settings-group {
+            margin-bottom: 16px;
+        }
+
+        .settings-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .settings-group select,
+        .settings-group input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .settings-group input:focus,
+        .settings-group select:focus {
+            outline: none;
+            border-color: #1b4332;
+        }
+
+        .settings-group small {
+            display: block;
+            color: #999;
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        .plate-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .plate-input-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .plate-input-group input {
+            flex: 1;
+            padding: 4px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .plate-input-group button {
+            padding: 4px 6px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        .plate-input-group button:hover {
+            background: #dc2626;
+        }
+
+        .add-plate-btn {
+            margin-top: 6px;
+            padding: 6px 8px;
+            background: #1b4332;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .add-plate-btn:hover {
+            background: #2d6a4f;
+        }
+
+        .column-name-input {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+
+        .column-name-input input {
+            flex: 1;
+            font-size: 12px;
+        }
+
+        .column-name-input button {
+            padding: 4px 8px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .add-column-btn {
+            width: 100%;
+            padding: 6px;
+            background: #1b4332;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 6px;
+            font-size: 11px;
+        }
+
+        .button-group-settings {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .button-group-settings button {
+            flex: 1;
+        }
+
+        .chart-section {
+            flex-shrink: 0;
+            background: #111;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .chart-header h2 {
+            font-size: 14px;
+            color: #fff;
+            margin: 0;
+        }
+
+        .chart-range-select {
+            background: #222;
+            color: #ccc;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .drag-handle {
+            flex: 0 0 16px !important;
+            max-width: 16px;
+            color: #bbb;
+            font-size: 13px;
+            cursor: grab;
+            text-align: center;
+            padding: 0 !important;
+            border-right: none !important;
+            touch-action: none;
+            user-select: none;
+            letter-spacing: -2px;
+        }
+
+        .workout-row.drag-over {
+            border-top: 2px solid #1b4332;
+            background: #f0f7f4;
+        }
+
+        .workout-row.dragging {
+            opacity: 0.4;
+        }
+
+        @media (max-width: 480px) {
+            .timer-display { font-size: 36px; }
+            .section { padding: 8px; }
+            .workout-cell { font-size: 11px; padding: 3px 2px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Training Log</h1>
+            <button class="settings-btn" onclick="openSettings()" title="Settings">
+                <svg width="38" height="38" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Outer rim / lip -->
+                  <circle cx="19" cy="19" r="18" fill="#141414" stroke="#4a4a4a" stroke-width="1"/>
+                  <!-- Rim highlight top arc -->
+                  <path d="M 4 19 A 15 15 0 0 1 34 19" fill="none" stroke="#5a5a5a" stroke-width="1" stroke-linecap="round"/>
+                  <!-- Plate face -->
+                  <circle cx="19" cy="19" r="14.5" fill="#1e1e1e" stroke="#333" stroke-width="0.75"/>
+                  <!-- Inner raised hub ring -->
+                  <circle cx="19" cy="19" r="8.5" fill="#181818" stroke="#3a3a3a" stroke-width="1"/>
+                  <!-- Hub face -->
+                  <circle cx="19" cy="19" r="6.5" fill="#202020" stroke="#444" stroke-width="0.5"/>
+                  <!-- Center bore hole -->
+                  <circle cx="19" cy="19" r="3.4" fill="#060606" stroke="#505050" stroke-width="0.75"/>
+                  <!-- "45" stamped text -->
+                  <text x="19" y="22.5" text-anchor="middle" fill="#aaa" font-size="7" font-weight="900"
+                        font-family="-apple-system, Arial Black, sans-serif" letter-spacing="-0.3">45</text>
+                </svg>
+            </button>
+        </div>
+
+        <!-- REST TIMER -->
+        <div class="section timer-section">
+            <div class="timer-display" id="timerDisplay">00:00</div>
+            <div class="timer-inputs">
+                <div>
+                    <input type="number" id="timerMinutes" class="timer-input" min="0" max="99" value="3">
+                    <div class="timer-label">Minutes</div>
+                </div>
+                <div>
+                    <input type="number" id="timerSeconds" class="timer-input" min="0" max="59" value="0">
+                    <div class="timer-label">Seconds</div>
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-primary" id="startBtn" onclick="startTimer()">Start</button>
+                <button class="btn btn-secondary" id="stopBtn" onclick="stopTimer()" style="display:none;">Stop</button>
+                <button class="btn btn-secondary" onclick="resetTimer()">Reset</button>
+            </div>
+        </div>
+
+        <!-- BARBELL LOADER -->
+        <div class="section barbell-section">
+            <div class="barbell-inner">
+                <div class="barbell-left-col">
+                    <h2>Plate Loader</h2>
+                    <div class="weight-input-row">
+                        <input type="number" id="workWeight" placeholder="Weight" value="">
+                        <span class="weight-unit-label" id="weightUnitLabel">lbs</span>
+                    </div>
+                    <div class="plate-info" id="plateInfo" style="font-size:11px; color:#1b4332; font-weight:600; min-height:28px;">Enter weight</div>
+                </div>
+                <div class="barbell-right-col">
+                    <div id="barbellDisplay">
+                        <div class="barbell-diagram"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WORKOUT LOG -->
+        <div class="section workout-section">
+            <div class="workout-header">
+                <h2>Recent Workouts</h2>
+                <button class="btn btn-primary btn-small" onclick="addWorkoutRow()">+ Add</button>
+            </div>
+            <div class="workout-log">
+                <div class="workout-row" id="headerRow" style="background: #f3f4f6; font-weight: 600;">
+                </div>
+                <div id="workoutRows"></div>
+            </div>
+        <!-- PROGRESS CHART -->
+        <div class="chart-section">
+            <div class="chart-header">
+                <h2>Progress</h2>
+                <select id="chartRange" class="chart-range-select" onchange="renderChart()">
+                    <option value="3">L3M</option>
+                    <option value="6">L6M</option>
+                    <option value="12">L12M</option>
+                    <option value="0">All Time</option>
+                </select>
+            </div>
+            <div id="chartContainer"></div>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="close-btn" onclick="closeSettings()">✕</button>
+            </div>
+
+            <div class="settings-group">
+                <label>Timer Sound</label>
+                <select id="soundType" onchange="saveSettings()">
+                    <option value="beep">Beep</option>
+                    <option value="buzz">Buzz</option>
+                    <option value="ding">Ding</option>
+                    <option value="bell">Bell</option>
+                </select>
+            </div>
+
+            <div class="settings-group">
+                <label>Weight Unit</label>
+                <select id="settingsWeightUnit" onchange="saveSettings()">
+                    <option value="lbs">Pounds (lbs)</option>
+                    <option value="kg">Kilograms (kg)</option>
+                </select>
+            </div>
+
+            <div class="settings-group">
+                <label>Bar Weight</label>
+                <input type="number" id="barWeight" value="45" onchange="saveSettings()" step="0.5">
+                <small style="color: #666;">Standard bar is 45 lbs / 20 kg</small>
+            </div>
+
+            <div class="settings-group">
+                <label>Available Plates</label>
+                <div id="platesList"></div>
+                <button class="add-plate-btn" onclick="addPlateInput()">+ Add Plate</button>
+            </div>
+
+            <div class="settings-group">
+                <label>Workout Column Names (max 10)</label>
+                <div id="columnNamesList"></div>
+                <button class="add-column-btn" onclick="addColumnInput()" id="addColumnBtn">+ Add Column</button>
+            </div>
+
+            <button class="btn btn-success" style="width: 100%; margin-top: 16px; margin-bottom: 8px;" onclick="exportToExcel()">Export CSV (opens in Excel)</button>
+
+            <button class="btn btn-danger" style="width: 100%;" onclick="clearAllData()">Clear All Data</button>
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        let state = {
+            settings: {
+                soundType: 'beep',
+                weightUnit: 'lbs',
+                barWeight: 45,
+                availablePlates: [
+                    {weight: 45,   count: 2},
+                    {weight: 25,   count: 1},
+                    {weight: 10,   count: 2},
+                    {weight: 5,    count: 1},
+                    {weight: 2.5,  count: 1},
+                    {weight: 1.25, count: 1},
+                    {weight: 1,    count: 1},
+                    {weight: 0.75, count: 1},
+                    {weight: 0.5,  count: 1}
+                ],
+                columnNames: ['Weight', 'Squat', 'Press', 'Bench', 'Deadlift', 'Chins']
+            },
+            timer: {
+                isRunning: false,
+                remainingSeconds: 0,
+                defaultMinutes: 3,
+                defaultSeconds: 0,
+                intervalId: null
+            },
+            workouts: []
+        };
+
+        // Load state from localStorage
+        function loadState() {
+            const stored = localStorage.getItem('workoutTrackerState');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                state.settings = { ...state.settings, ...parsed.settings };
+                state.workouts = parsed.workouts || [];
+            }
+            updateUI();
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            localStorage.setItem('workoutTrackerState', JSON.stringify({
+                settings: state.settings,
+                workouts: state.workouts
+            }));
+        }
+
+        // TIMER FUNCTIONS
+        function startTimer() {
+            if (state.timer.isRunning) return;
+            
+            if (state.timer.remainingSeconds === 0) {
+                const minutes = parseInt(document.getElementById('timerMinutes').value) || 0;
+                const seconds = parseInt(document.getElementById('timerSeconds').value) || 0;
+                state.timer.remainingSeconds = minutes * 60 + seconds;
+                state.timer.defaultMinutes = minutes;
+                state.timer.defaultSeconds = seconds;
+            }
+
+            state.timer.isRunning = true;
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'flex';
+
+            state.timer.intervalId = setInterval(() => {
+                state.timer.remainingSeconds--;
+                updateTimerDisplay();
+
+                if (state.timer.remainingSeconds <= 0) {
+                    playSound();
+                    resetTimer();
+                    state.timer.isRunning = false;
+                    document.getElementById('startBtn').style.display = 'flex';
+                    document.getElementById('stopBtn').style.display = 'none';
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            state.timer.isRunning = false;
+            clearInterval(state.timer.intervalId);
+            document.getElementById('startBtn').style.display = 'flex';
+            document.getElementById('stopBtn').style.display = 'none';
+        }
+
+        function resetTimer() {
+            stopTimer();
+            state.timer.remainingSeconds = 0;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(state.timer.remainingSeconds / 60);
+            const seconds = state.timer.remainingSeconds % 60;
+            document.getElementById('timerDisplay').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function playSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const soundType = state.settings.soundType;
+
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            switch(soundType) {
+                case 'beep':
+                    osc.frequency.value = 800;
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                    break;
+                case 'buzz':
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.setValueAtTime(700, now + 0.05);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                    break;
+                case 'ding':
+                    osc.frequency.setValueAtTime(1000, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.5);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                    break;
+                case 'bell':
+                    osc.frequency.setValueAtTime(1200, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.6);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                    osc.start(now);
+                    osc.stop(now + 0.6);
+                    break;
+            }
+        }
+
+        // BARBELL PLATE CALCULATOR
+        // Helper: convert plate weight to safe CSS class suffix
+        function plateCSS(weight) {
+            return 'plate-' + String(weight).replace('.', '_');
+        }
+
+        // Helper: format ISO date string as ddMMMyy
+        function formatDate(iso) {
+            if (!iso) return '';
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const d = new Date(iso + 'T00:00:00');
+            const day = String(d.getDate()).padStart(2, '0');
+            const mon = months[d.getMonth()];
+            const yr  = String(d.getFullYear()).slice(2);
+            return `${day}${mon}${yr}`;
+        }
+
+        function calculatePlates() {
+            const weight = parseFloat(document.getElementById('workWeight').value);
+            if (!weight || weight <= 0) {
+                document.getElementById('plateInfo').textContent = 'Enter weight';
+                document.getElementById('barbellDisplay').innerHTML = '<div class="barbell-diagram"></div>';
+                return;
+            }
+
+            const barWeight = state.settings.barWeight;
+            const neededPerSide = (weight - barWeight) / 2;
+
+            if (neededPerSide < 0) {
+                document.getElementById('plateInfo').textContent = `Min: ${barWeight} ${state.settings.weightUnit}`;
+                return;
+            }
+
+            // Build sorted plate list respecting counts
+            const sorted = [...state.settings.availablePlates].sort((a, b) => b.weight - a.weight);
+            const usedCounts = {};
+            sorted.forEach(p => usedCounts[p.weight] = 0);
+
+            const selectedPlates = [];
+            let remaining = neededPerSide;
+
+            for (const p of sorted) {
+                while (remaining >= p.weight - 0.001 && usedCounts[p.weight] < p.count) {
+                    selectedPlates.push(p.weight);
+                    usedCounts[p.weight]++;
+                    remaining -= p.weight;
+                    remaining = Math.round(remaining * 1000) / 1000;
+                }
+            }
+
+            if (remaining > 0.01) {
+                document.getElementById('plateInfo').textContent = `Can't make exact weight`;
+                document.getElementById('barbellDisplay').innerHTML = '<div class="barbell-diagram"></div>';
+                return;
+            }
+
+            document.getElementById('barbellDisplay').innerHTML = displayBarbell(selectedPlates);
+
+            // Build readable plate summary  e.g. "45+25+10"
+            const summary = selectedPlates.join('+');
+            document.getElementById('plateInfo').textContent =
+                `${weight} ${state.settings.weightUnit}  |  ${summary}`;
+        }
+
+        function displayBarbell(plates) {
+            const platesByWeight = {};
+            plates.forEach(p => { platesByWeight[p] = (platesByWeight[p] || 0) + 1; });
+
+            const sortedWeights = Object.keys(platesByWeight).map(Number).sort((a, b) => b - a);
+
+            let platesHTML = '';
+            sortedWeights.forEach(weight => {
+                const count = platesByWeight[weight];
+                for (let i = 0; i < count; i++) {
+                    platesHTML += `<div class="plate ${plateCSS(weight)}"><span>${weight}</span></div>`;
+                }
+            });
+
+            return `
+                <div class="barbell-diagram">
+                    <div class="bar-main"></div>
+                    <div class="collar"></div>
+                    <div class="plates-row">${platesHTML}</div>
+                </div>`;
+        }
+
+        // WORKOUT LOG
+        function addWorkoutRow() {
+            const newWorkout = {
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                values: {}
+            };
+            state.settings.columnNames.forEach(col => { newWorkout.values[col] = ''; });
+            state.workouts.unshift(newWorkout);
+            saveState();
+            renderWorkoutLog();
+            renderChart();
+        }
+
+        function updateWorkoutValue(id, column, value) {
+            const workout = state.workouts.find(w => w.id === id);
+            if (workout) { workout.values[column] = value; saveState(); renderChart(); }
+        }
+
+        function updateWorkoutDate(id, value) {
+            const workout = state.workouts.find(w => w.id === id);
+            if (workout) { workout.date = value; saveState(); renderChart(); }
+        }
+
+        function deleteWorkout(id) {
+            state.workouts = state.workouts.filter(w => w.id !== id);
+            saveState();
+            renderWorkoutLog();
+        }
+
+        function renderWorkoutLog() {
+            const headerRow = document.getElementById('headerRow');
+            headerRow.innerHTML = `
+                <div class="workout-cell drag-handle" style="visibility:hidden;">⋮⋮</div>
+                <div class="workout-cell" style="font-weight:600;color:#1b4332;">Date</div>
+                ${state.settings.columnNames.map(col =>
+                    `<div class="workout-cell" style="font-weight:600;color:#1b4332;">${col}</div>`
+                ).join('')}
+            `;
+
+            const recentWorkouts = state.workouts.slice(0, 5);
+            const rowsHTML = recentWorkouts.map((workout, idx) => `
+                <div class="workout-row workout-row-input"
+                     draggable="true"
+                     data-idx="${idx}"
+                     ondragstart="dndStart(event,${idx})"
+                     ondragover="dndOver(event)"
+                     ondragleave="dndLeave(event)"
+                     ondrop="dndDrop(event,${idx})"
+                     ondragend="dndEnd(event)">
+                    <div class="workout-cell drag-handle"
+                         ontouchstart="touchDragStart(event,${idx})"
+                         ontouchmove="touchDragMove(event)"
+                         ontouchend="touchDragEnd(event,${idx})">⋮⋮</div>
+                    <div class="workout-cell" style="font-size:10px;font-weight:600;color:#1b4332;padding:2px;">
+                        <div style="font-size:10px;text-align:center;">${formatDate(workout.date)}</div>
+                        <input type="date" value="${workout.date}" style="display:none;"
+                               onchange="updateWorkoutDate(${workout.id}, this.value); this.previousElementSibling.textContent=formatDate(this.value);"
+                               id="date-${workout.id}">
+                        <div style="font-size:9px;color:#aaa;text-align:center;cursor:pointer;"
+                             onclick="document.getElementById('date-${workout.id}').showPicker()">✎</div>
+                    </div>
+                    ${state.settings.columnNames.map(col => `
+                        <div class="workout-cell">
+                            <input type="text" value="${workout.values[col] || ''}"
+                                   placeholder="-"
+                                   onchange="updateWorkoutValue(${workout.id}, '${col}', this.value)">
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+
+            document.getElementById('workoutRows').innerHTML = rowsHTML;
+        }
+
+        // ── Desktop drag-and-drop ─────────────────────────────────────────
+        let _dragSrc = null;
+
+        function dndStart(e, idx) {
+            _dragSrc = idx;
+            e.dataTransfer.effectAllowed = 'move';
+            setTimeout(() => e.currentTarget.classList.add('dragging'), 0);
+        }
+
+        function dndOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            document.querySelectorAll('#workoutRows .workout-row').forEach(r => r.classList.remove('drag-over'));
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function dndLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function dndDrop(e, targetIdx) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (_dragSrc !== null && _dragSrc !== targetIdx) reorderWorkouts(_dragSrc, targetIdx);
+        }
+
+        function dndEnd(e) {
+            _dragSrc = null;
+            document.querySelectorAll('#workoutRows .workout-row').forEach(r => {
+                r.classList.remove('dragging', 'drag-over');
+            });
+        }
+
+        // ── Touch drag-and-drop (iOS) ─────────────────────────────────────
+        let _touchSrc = null, _touchIndicator = null;
+
+        function touchDragStart(e, idx) {
+            e.stopPropagation();
+            _touchSrc = idx;
+            const row = e.currentTarget.closest('.workout-row');
+            row.classList.add('dragging');
+
+            // Floating indicator dot
+            _touchIndicator = document.createElement('div');
+            _touchIndicator.style.cssText = 'position:fixed;width:12px;height:12px;border-radius:50%;background:#1b4332;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);';
+            document.body.appendChild(_touchIndicator);
+        }
+
+        function touchDragMove(e) {
+            if (_touchSrc === null) return;
+            e.preventDefault();
+            const t = e.touches[0];
+            if (_touchIndicator) {
+                _touchIndicator.style.left = t.clientX + 'px';
+                _touchIndicator.style.top  = t.clientY + 'px';
+            }
+            document.querySelectorAll('#workoutRows .workout-row').forEach(r => r.classList.remove('drag-over'));
+            const el = document.elementFromPoint(t.clientX, t.clientY);
+            const targetRow = el?.closest('.workout-row[data-idx]');
+            if (targetRow) targetRow.classList.add('drag-over');
+        }
+
+        function touchDragEnd(e) {
+            if (_touchSrc === null) return;
+            e.preventDefault();
+            const t = e.changedTouches[0];
+            const el = document.elementFromPoint(t.clientX, t.clientY);
+            const targetRow = el?.closest('.workout-row[data-idx]');
+            const targetIdx = targetRow ? parseInt(targetRow.dataset.idx) : null;
+
+            if (_touchIndicator) { document.body.removeChild(_touchIndicator); _touchIndicator = null; }
+            document.querySelectorAll('#workoutRows .workout-row').forEach(r =>
+                r.classList.remove('dragging', 'drag-over'));
+
+            if (targetIdx !== null && _touchSrc !== targetIdx) reorderWorkouts(_touchSrc, targetIdx);
+            _touchSrc = null;
+        }
+
+        // ── Shared reorder logic ──────────────────────────────────────────
+        function reorderWorkouts(fromIdx, toIdx) {
+            const visible = state.workouts.slice(0, 5);
+            const rest    = state.workouts.slice(5);
+            const [moved] = visible.splice(fromIdx, 1);
+            visible.splice(toIdx, 0, moved);
+            state.workouts = [...visible, ...rest];
+            saveState();
+            renderWorkoutLog();
+            renderChart();
+        }
+
+        // SETTINGS
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+            renderSettingsUI();
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        function saveSettings() {
+            state.settings.soundType = document.getElementById('soundType').value;
+            state.settings.weightUnit = document.getElementById('settingsWeightUnit').value;
+            state.settings.barWeight = parseFloat(document.getElementById('barWeight').value);
+
+            // Collect plates as {weight, count} objects
+            const plateRows = document.querySelectorAll('.plate-input-group');
+            state.settings.availablePlates = [];
+            plateRows.forEach(row => {
+                const w = parseFloat(row.querySelector('.plate-w').value);
+                const c = parseInt(row.querySelector('.plate-c').value);
+                if (w > 0 && c > 0) state.settings.availablePlates.push({weight: w, count: c});
+            });
+
+            // Collect column names
+            const columnInputs = document.querySelectorAll('.column-name-input input');
+            state.settings.columnNames = [];
+            columnInputs.forEach(input => {
+                if (input.value.trim()) state.settings.columnNames.push(input.value.trim());
+            });
+
+            saveState();
+            updateUI();
+        }
+
+        function renderSettingsUI() {
+            document.getElementById('soundType').value = state.settings.soundType;
+            document.getElementById('settingsWeightUnit').value = state.settings.weightUnit;
+            document.getElementById('barWeight').value = state.settings.barWeight;
+
+            const platesList = document.getElementById('platesList');
+            platesList.innerHTML = state.settings.availablePlates.map((p, idx) => `
+                <div class="plate-input-group" style="display:flex;gap:4px;margin-bottom:4px;align-items:center;">
+                    <input class="plate-w" type="number" value="${p.weight}" step="0.25" min="0.25"
+                           style="flex:1;padding:4px;border:2px solid #ddd;border-radius:4px;font-size:12px;"
+                           onchange="saveSettings()">
+                    <span style="font-size:11px;color:#555;">×</span>
+                    <input class="plate-c" type="number" value="${p.count}" min="1" max="10"
+                           style="width:40px;padding:4px;border:2px solid #ddd;border-radius:4px;font-size:12px;"
+                           onchange="saveSettings()">
+                    <button onclick="removePlate(${idx})"
+                            style="padding:4px 7px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer;font-size:11px;">✕</button>
+                </div>
+            `).join('');
+
+            const columnsList = document.getElementById('columnNamesList');
+            const addBtn = document.getElementById('addColumnBtn');
+            columnsList.innerHTML = state.settings.columnNames.map((col, idx) => `
+                <div class="column-name-input">
+                    <input type="text" value="${col}" onchange="saveSettings()">
+                    <button onclick="removeColumn(${idx})" style="background:#ef4444;">Remove</button>
+                </div>
+            `).join('');
+
+            addBtn.style.display = state.settings.columnNames.length >= 10 ? 'none' : 'block';
+        }
+
+        function addPlateInput() {
+            state.settings.availablePlates.push({weight: 2.5, count: 1});
+            saveState();
+            renderSettingsUI();
+        }
+
+        function removePlate(idx) {
+            state.settings.availablePlates.splice(idx, 1);
+            saveSettings();
+            renderSettingsUI();
+        }
+
+        function addColumnInput() {
+            if (state.settings.columnNames.length < 10) {
+                state.settings.columnNames.push('New Column');
+                saveSettings();
+                renderSettingsUI();
+            }
+        }
+
+        function removeColumn(idx) {
+            state.settings.columnNames.splice(idx, 1);
+            saveSettings();
+            renderSettingsUI();
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure? This will delete all data.')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        function exportToExcel() {
+            // Build CSV — no library needed, opens in Excel and Numbers
+            function escCSV(v) {
+                const s = String(v ?? '');
+                return (s.includes(',') || s.includes('"') || s.includes('\n'))
+                    ? `"${s.replace(/"/g, '""')}"` : s;
+            }
+
+            const rows = [];
+
+            // Header
+            rows.push(['Date', ...state.settings.columnNames].map(escCSV).join(','));
+
+            // Workout rows — sorted oldest → newest
+            const sorted = [...state.workouts].sort((a, b) => new Date(a.date) - new Date(b.date));
+            sorted.forEach(w => {
+                const row = [formatDate(w.date), ...state.settings.columnNames.map(col => w.values[col] || '')];
+                rows.push(row.map(escCSV).join(','));
+            });
+
+            const csv = rows.join('\r\n');
+            const now = new Date();
+            const filename = `training_log_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.csv`;
+
+            // Blob download — works on desktop; on iOS opens in Files / Numbers
+            try {
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url  = URL.createObjectURL(blob);
+                const a    = document.createElement('a');
+                a.href     = url;
+                a.download = filename;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 500);
+            } catch (e) {
+                // Ultimate fallback: open as data URI
+                window.open('data:text/csv;charset=utf-8,' + encodeURIComponent(csv));
+            }
+        }
+
+        // Catmull-Rom spline → SVG cubic bezier path through all points
+        function catmullRomPath(pts) {
+            if (pts.length < 2) return '';
+            if (pts.length === 2)
+                return `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)} L${pts[1].x.toFixed(1)},${pts[1].y.toFixed(1)}`;
+            let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+            for (let i = 0; i < pts.length - 1; i++) {
+                const p0 = pts[Math.max(i - 1, 0)];
+                const p1 = pts[i];
+                const p2 = pts[i + 1];
+                const p3 = pts[Math.min(i + 2, pts.length - 1)];
+                const cp1x = p1.x + (p2.x - p0.x) / 6;
+                const cp1y = p1.y + (p2.y - p0.y) / 6;
+                const cp2x = p2.x - (p3.x - p1.x) / 6;
+                const cp2y = p2.y - (p3.y - p1.y) / 6;
+                d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+            }
+            return d;
+        }
+
+        function renderChart() {
+            const rangeEl  = document.getElementById('chartRange');
+            if (!rangeEl) return;
+            const range    = parseInt(rangeEl.value);
+            const container = document.getElementById('chartContainer');
+            const months   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+            // ── Date filter ──────────────────────────────────────────────
+            const now = new Date();
+            let cutoff = null;
+            if (range > 0) { cutoff = new Date(now); cutoff.setMonth(cutoff.getMonth() - range); }
+
+            let filtered = state.workouts.filter(w => w.date);
+            if (cutoff) filtered = filtered.filter(w => new Date(w.date + 'T00:00:00') >= cutoff);
+            filtered = [...filtered].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (filtered.length < 2) {
+                container.innerHTML = '<div style="text-align:center;color:#444;padding:28px 0;font-size:12px;">Log at least 2 workouts to see progress</div>';
+                return;
+            }
+
+            // ── Columns to plot (skip first = bodyweight) ─────────────────
+            const chartCols = state.settings.columnNames.slice(1);
+            const colors    = ['#ef4444','#2d6a4f','#f97316','#a855f7','#c8a96e','#eab308'];
+
+            // ── Time range ────────────────────────────────────────────────
+            const times = filtered.map(w => new Date(w.date + 'T00:00:00').getTime());
+            const minT  = times[0], maxT = times[times.length - 1];
+            const spanT = maxT - minT || 1;
+
+            // ── Y scale across all columns ────────────────────────────────
+            let allVals = [];
+            chartCols.forEach(col => filtered.forEach(w => {
+                const v = parseFloat(w.values[col]);
+                if (!isNaN(v) && v > 0) allVals.push(v);
+            }));
+
+            if (!allVals.length) {
+                container.innerHTML = '<div style="text-align:center;color:#444;padding:28px 0;font-size:12px;">No lift data to display yet</div>';
+                return;
+            }
+
+            const rawMin = Math.min(...allVals), rawMax = Math.max(...allVals);
+            const pad  = Math.max((rawMax - rawMin) * 0.15, 5);
+            const yMin = Math.floor((rawMin - pad) / 5) * 5;
+            const yMax = Math.ceil ((rawMax + pad) / 5) * 5;
+            const ySpan = yMax - yMin;
+
+            // ── SVG dimensions ────────────────────────────────────────────
+            const W=340, H=160, ml=36, mr=6, mt=8, mb=22;
+            const cw = W - ml - mr, ch = H - mt - mb;
+            const xOf = t => ml + ((t  - minT)  / spanT) * cw;
+            const yOf = v => mt + ch - ((v - yMin) / ySpan) * ch;
+
+            // ── Y grid + labels ───────────────────────────────────────────
+            let grid = '';
+            for (let i = 0; i <= 4; i++) {
+                const v = yMin + (ySpan / 4) * i;
+                const y = yOf(v).toFixed(1);
+                grid += `<line x1="${ml}" y1="${y}" x2="${W - mr}" y2="${y}" stroke="#222" stroke-width="1"/>`;
+                grid += `<text x="${ml - 4}" y="${(parseFloat(y) + 3.5).toFixed(1)}" text-anchor="end" fill="#555" font-size="9">${Math.round(v)}</text>`;
+            }
+
+            // ── X axis labels: 4 evenly spaced across full range ──────────
+            let xLabels = '';
+            const n = filtered.length;
+            const labelIdxs = n <= 4
+                ? [...Array(n).keys()]
+                : [0, Math.round(n / 3), Math.round(2 * n / 3), n - 1];
+            [...new Set(labelIdxs)].forEach(i => {
+                const d = new Date(filtered[i].date + 'T00:00:00');
+                const x = xOf(d.getTime()).toFixed(1);
+                xLabels += `<text x="${x}" y="${H - mb + 14}" text-anchor="middle" fill="#555" font-size="9">${d.getDate()}${months[d.getMonth()]}${String(d.getFullYear()).slice(2)}</text>`;
+            });
+
+            // ── Smooth lines per column — sorted by date, not table order ─
+            let paths = '';
+            const activeCols = [];
+            chartCols.forEach((col, idx) => {
+                const color = colors[idx % colors.length];
+                const pts = filtered
+                    .map(w => ({
+                        t: new Date(w.date + 'T00:00:00').getTime(),
+                        x: xOf(new Date(w.date + 'T00:00:00').getTime()),
+                        y: yOf(parseFloat(w.values[col]))
+                    }))
+                    .filter(p => isFinite(p.t) && isFinite(p.x) && isFinite(p.y))
+                    .sort((a, b) => a.t - b.t);   // ← explicit date sort per column
+
+                if (pts.length < 2) return;
+                activeCols.push({ col, color });
+                paths += `<path d="${catmullRomPath(pts)}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+                // Small dot only at first and last point for reference
+                [pts[0], pts[pts.length - 1]].forEach(p =>
+                    paths += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${color}" stroke="#111" stroke-width="1.5"/>`
+                );
+            });
+
+            // ── Legend ────────────────────────────────────────────────────
+            const legend = activeCols.map(({ col, color }) =>
+                `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#aaa;">
+                    <svg width="18" height="6" style="flex-shrink:0"><line x1="0" y1="3" x2="18" y2="3" stroke="${color}" stroke-width="2.5"/></svg>${col}
+                </span>`
+            ).join('');
+
+            container.innerHTML = `
+                <svg width="100%" viewBox="0 0 ${W} ${H}" style="display:block;overflow:visible;">
+                    ${grid}
+                    <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ch}" stroke="#333" stroke-width="1"/>
+                    <line x1="${ml}" y1="${mt + ch}" x2="${W - mr}" y2="${mt + ch}" stroke="#333" stroke-width="1"/>
+                    ${xLabels}
+                    ${paths}
+                </svg>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:8px;">${legend}</div>`;
+        }
+
+        function updateUI() {
+            const unitLabel = document.getElementById('weightUnitLabel');
+            if (unitLabel) unitLabel.textContent = state.settings.weightUnit;
+            document.getElementById('timerMinutes').value = state.settings.defaultMinutes;
+            document.getElementById('timerSeconds').value = state.settings.defaultSeconds;
+            renderWorkoutLog();
+            updateTimerDisplay();
+            renderChart();
+        }
+
+        // Initialize
+        window.addEventListener('beforeunload', saveState);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            document.getElementById('workWeight').addEventListener('input', calculatePlates);
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('settingsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'settingsModal') {
+                closeSettings();
+            }
+        });
+    </script>
+</body>
+</html>
