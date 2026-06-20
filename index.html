@@ -1047,9 +1047,11 @@
         }
 
         function deleteWorkout(id) {
+            if (!confirm('Delete this workout?')) return;
             state.workouts = state.workouts.filter(w => w.id !== id);
             saveState();
             renderWorkoutLog();
+            renderChart();
         }
 
         function renderWorkoutLog() {
@@ -1060,10 +1062,10 @@
                 ${state.settings.columnNames.map(col =>
                     `<div class="workout-cell" style="font-weight:600;color:#1b4332;">${col}</div>`
                 ).join('')}
+                <div class="workout-cell" style="flex:0 0 22px;max-width:22px;border-right:none;"></div>
             `;
 
-            const recentWorkouts = state.workouts.slice(0, 5);
-            const rowsHTML = recentWorkouts.map((workout, idx) => `
+            const rowsHTML = state.workouts.map((workout, idx) => `
                 <div class="workout-row workout-row-input"
                      draggable="true"
                      data-idx="${idx}"
@@ -1076,10 +1078,12 @@
                          ontouchstart="touchDragStart(event,${idx})"
                          ontouchmove="touchDragMove(event)"
                          ontouchend="touchDragEnd(event,${idx})">⋮⋮</div>
-                    <div class="workout-cell" style="padding:2px;min-width:0;position:relative;">
-                        <div id="datelabel-${workout.id}" style="font-size:9px;font-weight:600;color:#1b4332;text-align:center;pointer-events:none;">${formatDate(workout.date)}</div>
-                        <input type="date" value="${workout.date}"
-                               style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;"
+                    <div class="workout-cell" style="padding:2px;min-width:0;position:relative;overflow:hidden;">
+                        <label for="date-${workout.id}"
+                               style="display:block;font-size:9px;font-weight:600;color:#1b4332;text-align:center;cursor:pointer;white-space:nowrap;"
+                               id="datelabel-${workout.id}">${formatDate(workout.date)}</label>
+                        <input type="date" id="date-${workout.id}" value="${workout.date}"
+                               style="position:absolute;width:1px;height:1px;opacity:0;bottom:0;left:50%;"
                                onchange="updateWorkoutDate(${workout.id}, this.value); document.getElementById('datelabel-${workout.id}').textContent=formatDate(this.value);">
                     </div>
                     ${state.settings.columnNames.map(col => `
@@ -1089,6 +1093,10 @@
                                    onchange="updateWorkoutValue(${workout.id}, '${col}', this.value)">
                         </div>
                     `).join('')}
+                    <div class="workout-cell" style="flex:0 0 22px;max-width:22px;padding:0;border-right:none;">
+                        <button onclick="deleteWorkout(${workout.id})"
+                                style="background:none;border:none;color:#ccc;font-size:13px;cursor:pointer;width:100%;padding:0;line-height:1;">✕</button>
+                    </div>
                 </div>
             `).join('');
 
@@ -1175,11 +1183,8 @@
 
         // ── Shared reorder logic ──────────────────────────────────────────
         function reorderWorkouts(fromIdx, toIdx) {
-            const visible = state.workouts.slice(0, 5);
-            const rest    = state.workouts.slice(5);
-            const [moved] = visible.splice(fromIdx, 1);
-            visible.splice(toIdx, 0, moved);
-            state.workouts = [...visible, ...rest];
+            const [moved] = state.workouts.splice(fromIdx, 1);
+            state.workouts.splice(toIdx, 0, moved);
             saveState();
             renderWorkoutLog();
             renderChart();
