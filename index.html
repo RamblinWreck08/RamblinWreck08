@@ -313,10 +313,11 @@
         }
 
         .workout-log {
-            height: 198px;
+            max-height: 260px;
             overflow-y: auto;
             border: 1px solid #ddd;
             border-radius: 8px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .workout-row {
@@ -599,17 +600,42 @@
         }
 
         .drag-handle {
-            flex: 0 0 16px !important;
-            max-width: 16px;
+            flex: 0 0 14px !important;
+            max-width: 14px;
+            min-width: 14px;
             color: #bbb;
-            font-size: 13px;
+            font-size: 11px;
             cursor: grab;
             text-align: center;
             padding: 0 !important;
-            border-right: none !important;
+            border-right: 1px solid #e5e7eb !important;
             touch-action: none;
             user-select: none;
             letter-spacing: -2px;
+        }
+
+        .delete-cell {
+            flex: 0 0 20px !important;
+            max-width: 20px;
+            min-width: 20px;
+            padding: 0 !important;
+            border-right: none !important;
+            text-align: center;
+        }
+
+        .delete-cell button {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 12px;
+            cursor: pointer;
+            width: 100%;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .delete-cell button:active {
+            color: #ef4444;
         }
 
         .workout-row.drag-over {
@@ -698,7 +724,7 @@
                 <h2>Recent Workouts</h2>
                 <button class="btn btn-primary btn-small" onclick="addWorkoutRow()" style="flex:0 0 auto;width:auto;padding:4px 14px;">+ Add</button>
             </div>
-            <div class="workout-log" style="max-height:210px;overflow-y:auto;">
+            <div class="workout-log">
                 <div class="workout-row" id="headerRow" style="background: #f3f4f6; font-weight: 600;">
                 </div>
                 <div id="workoutRows"></div>
@@ -1062,7 +1088,7 @@
                 ${state.settings.columnNames.map(col =>
                     `<div class="workout-cell" style="font-weight:600;color:#1b4332;">${col}</div>`
                 ).join('')}
-                <div class="workout-cell" style="flex:0 0 22px;max-width:22px;border-right:none;"></div>
+                <div class="delete-cell"></div>
             `;
 
             const rowsHTML = state.workouts.map((workout, idx) => `
@@ -1093,9 +1119,8 @@
                                    onchange="updateWorkoutValue(${workout.id}, '${col}', this.value)">
                         </div>
                     `).join('')}
-                    <div class="workout-cell" style="flex:0 0 22px;max-width:22px;padding:0;border-right:none;">
-                        <button onclick="deleteWorkout(${workout.id})"
-                                style="background:none;border:none;color:#ccc;font-size:13px;cursor:pointer;width:100%;padding:0;line-height:1;">✕</button>
+                    <div class="delete-cell">
+                        <button onclick="deleteWorkout(${workout.id})">✕</button>
                     </div>
                 </div>
             `).join('');
